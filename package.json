@@ -1,0 +1,21 @@
+{
+  "name": "data-aggregator",
+  "version": "1.0.0",
+  "description": "A small utility library to aggregate and query sets of data",
+  "main": "index.ts",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watchAll"
+  },
+  "author": "Logan Wishart-Craig",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^24.0.18",
+    "@typescript-eslint/eslint-plugin": "^2.3.0",
+    "@typescript-eslint/parser": "^2.3.0",
+    "eslint": "^6.4.0",
+    "jest": "^24.9.0",
+    "ts-jest": "^24.1.0",
+    "typescript": "^3.6.3"
+  }
+}
