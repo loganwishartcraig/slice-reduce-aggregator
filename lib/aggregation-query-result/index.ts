@@ -1,4 +1,4 @@
-import { IAggregatorSliceQueryConfig, IAggregatorSliceResult } from "../types";
+import { IAggregatorQueryConfig, IAggregatorSliceResult } from "../types";
 
 export interface IAggregationQueryResult<T> {
 
@@ -32,12 +32,12 @@ export interface IAggregationQueryMergeConfig {
 export class AggregationQueryResult<T> implements IAggregationQueryResult<T> {
 
     private _results: IAggregatorSliceResult<any>[] | any[];
-    private _query: IAggregatorSliceQueryConfig;
+    private _query: IAggregatorQueryConfig;
     private _depth: number;
 
     constructor(config: {
         results: IAggregatorSliceResult<any>[] | any[];
-        query: IAggregatorSliceQueryConfig
+        query: IAggregatorQueryConfig
     }) {
 
         this._results = config.results;

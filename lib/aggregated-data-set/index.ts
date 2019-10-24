@@ -76,7 +76,7 @@
 
 import { AggregationQueryResult, IAggregationQueryResult } from "../aggregation-query-result";
 import { DataAggregationFactory, IDataAggregation } from "../data-aggregation-factory";
-import { IAggregator, IAggregatorSliceQueryConfig } from "../types";
+import { IAggregator, IAggregatorQueryConfig, IDataMatcher } from "../types";
 
 /**
  * Configuration options for a new AggregatedDataSet
@@ -91,6 +91,11 @@ export interface IAggregatedDataSetConfig<T> {
     /** The set of aggregators to apply. Aggregators are applied in the order supplied */
     aggregators: IAggregator<T>[];
 
+    /**
+     * A function that determine's if the two items are the same object.
+     * Will default to strict equality (a === b)
+     */
+    matcher?: IDataMatcher<T>;
 }
 
 /**
@@ -98,7 +103,7 @@ export interface IAggregatedDataSetConfig<T> {
  *
  * @typeparam {T} The object type contained in the set
  */
-export interface IAggregatedDataSet<T> {
+export interface IAggregatedDataSet<T = any> {
 
     /**
      * Inserts a single item into the data set
@@ -106,6 +111,14 @@ export interface IAggregatedDataSet<T> {
      * @param item The item to insert
      */
     push(item: T): T;
+
+
+    /**
+     * Removes a single item from the data set
+     *
+     * @param item The item to remove
+     */
+    remove(item: T): void;
 
     /**
      * Allows simple iteration over all the elements in the data set.
@@ -123,14 +136,24 @@ export interface IAggregatedDataSet<T> {
     purge(): void;
 
     /**
-     * Returns a 'slice' of the data, a pruned sub-tree
+     * Querys the tree returning a pruned sub-tree
      * of the original tree aggregation.
      *
      * @param query The query to retrieve a slice for
      */
-    slice(
-        query: IAggregatorSliceQueryConfig
+    query(
+        query: IAggregatorQueryConfig
     ): IAggregationQueryResult<T[]>;
+
+    /**
+     * Returns a 'slice' of the data, a flat array containing
+     * items in the subtree created via 'query'.
+     *
+     * @param query The query to retrieve a slice for
+     */
+    slice(
+        query: IAggregatorQueryConfig
+    ): T[];
 
     /**
      * Allows applying a reducer to the leaves of a common
@@ -141,16 +164,24 @@ export interface IAggregatedDataSet<T> {
      * @param baseBuilder A function that returns a new 'base' reduction value for each new set of leaves. Receives a list of keys corresponding to the path from 'parent->root' for the given collection of leaves.
      */
     sliceReduce<C>(
-        query: IAggregatorSliceQueryConfig,
+        query: IAggregatorQueryConfig,
         reducer: (acc: C, item: T) => C,
         baseBuilder: (keyPath: string[]) => C
     ): IAggregationQueryResult<C>;
 
 
+    /**
+     * Returns the current size of the aggregation.
+     */
+    size(): number;
+
+
 }
 
 
-export class AggregatedDataSet<T> implements IAggregatedDataSet<T> {
+export class AggregatedDataSet<T = any> implements IAggregatedDataSet<T> {
+
+    public static voidKey = '___VOID___' as const;
 
     /** The root of the aggregation tree. */
     private _rootAggregation: IDataAggregation<T>;
@@ -158,12 +189,16 @@ export class AggregatedDataSet<T> implements IAggregatedDataSet<T> {
     /** A list of aggregation names in the order they were applied. */
     private _aggregationOrder: string[] = [];
 
+    private _matcher: IDataMatcher<T>;
+
     constructor({
         data,
         aggregators: [rootAggregator, ...subAggregators],
+        matcher = (a, b) => a === b
     }: IAggregatedDataSetConfig<T>) {
 
-        this._rootAggregation = DataAggregationFactory.build<T>(rootAggregator, subAggregators);
+        this._matcher = matcher;
+        this._rootAggregation = DataAggregationFactory.build<T>(rootAggregator, subAggregators, matcher);
 
         this._aggregationOrder = this._resolveAggregationOrder(rootAggregator, subAggregators);
 
@@ -176,6 +211,10 @@ export class AggregatedDataSet<T> implements IAggregatedDataSet<T> {
         return item;
     }
 
+    public remove(item: T): void {
+        this._rootAggregation.remove(item);
+    }
+
     public forEach(fn: (item: T, keyPath: string[]) => void): void {
         this._rootAggregation.forEach(fn);
     }
@@ -184,21 +223,31 @@ export class AggregatedDataSet<T> implements IAggregatedDataSet<T> {
         this._rootAggregation.purge();
     }
 
-    public slice(query: IAggregatorSliceQueryConfig): IAggregationQueryResult<T[]> {
+    public size(): number {
+        return this._rootAggregation.size();
+    }
 
-        const results = this._rootAggregation.slice(query);
+    public query(query: IAggregatorQueryConfig): IAggregationQueryResult<T[]> {
+
+        const results = this._rootAggregation.query(query);
 
         return new AggregationQueryResult({ results, query, });
 
     }
 
+    public slice(query: IAggregatorQueryConfig): T[] {
+
+        return this._rootAggregation.slice(query);
+
+    }
+
     public sliceReduce<C>(
-        query: IAggregatorSliceQueryConfig,
+        query: IAggregatorQueryConfig,
         reducer: (acc: C, item: T, index: number, keyPath: string[]) => C,
         baseBuilder: (keyPath: string[]) => C
     ): IAggregationQueryResult<C> {
 
-        const sliceResult = this._rootAggregation.slice(query);
+        const sliceResult = this._rootAggregation.query(query);
 
         const orderedAggNames = this._resolveOrderedAggNamesFromQuery(query);
 
@@ -249,7 +298,7 @@ export class AggregatedDataSet<T> implements IAggregatedDataSet<T> {
 
     }
 
-    private _resolveOrderedAggNamesFromQuery(query: IAggregatorSliceQueryConfig): string[] {
+    private _resolveOrderedAggNamesFromQuery(query: IAggregatorQueryConfig): string[] {
         return this._aggregationOrder.filter(aggName => query[aggName]);
     }
 

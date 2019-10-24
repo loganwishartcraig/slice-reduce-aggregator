@@ -15,7 +15,7 @@
  */
 
 
-import { IAggregator, IAggregatorSliceQueryConfig, IAggregatorSliceResult } from "../types";
+import { IAggregator, IAggregatorQueryConfig, IAggregatorSliceResult, IDataMatcher } from "../types";
 import { DataSubAggregation } from "../data-sub-aggregation";
 import { DataGroup } from "../data-group";
 
@@ -36,11 +36,25 @@ export interface IDataAggregation<T> {
     push(item: T): T;
 
     /**
-     * Performs the 'slice' operation on the node sub-tree
+     * Removes an item from the aggregation.
+     *
+     * @param item The item to remove
+     */
+    remove(item: T): void;
+
+    /**
+     * Query's the aggregation returning a 'slice result'
+     *
+     * @param query The query to execute
+     */
+    query(query: IAggregatorQueryConfig): IAggregatorSliceResult<T[]>[] | T[];
+
+    /**
+     * Returns only entries matching the given query.
      *
      * @param query The query to return the slice for
      */
-    slice(query: IAggregatorSliceQueryConfig): IAggregatorSliceResult<T[]>[] | T[];
+    slice(query: IAggregatorQueryConfig): T[];
 
     /**
      * Allows iteration over all objects in the aggregation
@@ -65,15 +79,15 @@ export interface IDataAggregation<T> {
 
 export class DataAggregationFactory {
 
-    public static build<T>(config: IAggregator<T>, subAggregators: IAggregator<T>[] = []): IDataAggregation<T> {
+    public static build<T>(config: IAggregator<T>, subAggregators: IAggregator<T>[] = [], matcher: IDataMatcher<T>): IDataAggregation<T> {
 
         // If there are more aggregations that need to be applied,
         // we return a sub-aggregation as the aggregation does not represent
         // a 'leaf-parent', otherwise we return a DataGroup
         if (subAggregators.length) {
-            return new DataSubAggregation<T>(config, subAggregators);
+            return new DataSubAggregation<T>(config, subAggregators, matcher);
         } else {
-            return new DataGroup<T>(config);
+            return new DataGroup<T>(config, matcher);
         }
     }
 

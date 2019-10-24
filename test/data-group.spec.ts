@@ -13,7 +13,7 @@ describe('DataGroup', () => {
         expect(() => {
             new DataGroup({
                 name: null,
-                keyAccessor: (): string => ''
+                keyAccessor: (): string => '',
             });
         }).toThrowError(TypeError);
 

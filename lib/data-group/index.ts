@@ -6,18 +6,19 @@
  */
 
 import { IDataAggregation } from "../data-aggregation-factory";
-import { IAggregator, IAggregatorSliceQueryConfig, IAggregatorSliceResult } from "../types";
-
+import { IAggregator, IAggregatorQueryConfig, IAggregatorSliceResult, IDataMatcher } from "../types";
+import { AggregatedDataSet } from '../aggregated-data-set'
 export class DataGroup<T> implements IDataAggregation<T> {
 
-    private _voidKey = '___VOID___' as const;
+    private _matcher: IDataMatcher<T>;
+
     private _leaves: { [key: string]: T[] } = {
-        [this._voidKey]: []
+        [AggregatedDataSet.voidKey]: []
     };
 
     private _config: IAggregator<T>;
 
-    constructor(config: IAggregator<T>) {
+    constructor(config: IAggregator<T>, matcher: IDataMatcher<T> = (a, b) => a === b) {
 
         if (!config || typeof config !== 'object') {
             throw new TypeError('Configuration must be an object');
@@ -27,6 +28,7 @@ export class DataGroup<T> implements IDataAggregation<T> {
             throw new TypeError(`config.keyAccessor must be a function. Received ${typeof config.keyAccessor}`);
         }
 
+        this._matcher = matcher;
         this._config = config;
 
     }
@@ -55,6 +57,20 @@ export class DataGroup<T> implements IDataAggregation<T> {
 
     }
 
+    public remove(item: T): T {
+
+        if (typeof item === 'undefined' || item === null) {
+            return item;
+        }
+
+        this._resolveItemKeys(item).forEach(key => {
+            if (this._leaves[key]) {
+                this._leaves[key] = this._leaves[key].filter(existing => this._matcher(existing, item));
+            }
+        });
+
+    }
+
     /**
      * Removes all entries
      */
@@ -71,7 +87,7 @@ export class DataGroup<T> implements IDataAggregation<T> {
             .reduce((count, { length }) => count + length, 0);
     }
 
-    public slice(query: IAggregatorSliceQueryConfig): IAggregatorSliceResult<T[]>[] | T[] {
+    public query(query: IAggregatorQueryConfig): IAggregatorSliceResult<T[]>[] | T[] {
 
         const keys = this._resolveKeysForSliceQuery(query);
         const base: any[] = [];
@@ -99,6 +115,30 @@ export class DataGroup<T> implements IDataAggregation<T> {
 
     }
 
+    public slice(query: IAggregatorQueryConfig): T[] {
+
+        const keys = this._resolveKeysForSliceQuery(query);
+        const base: T[] = [];
+
+        // If no keys are provided in the query,
+        // we return as though this node is a collection
+        // of objects itself, rather than an aggregation.
+        if (!keys) {
+            this.forEach(item => base.push(item))
+        } else {
+
+            // Otherwise we return the aggregator slice result for
+            // all keys provided.
+            keys.forEach(key => {
+                base.push(...this._getByKey(key));
+            });
+
+        }
+
+        return base;
+
+    }
+
     public forEach(fn: (item: T, keyPath: string[]) => void): void {
 
         // Simple loop over the contents of each leaf.
@@ -108,7 +148,7 @@ export class DataGroup<T> implements IDataAggregation<T> {
 
     }
 
-    private _resolveKeysForSliceQuery(query: IAggregatorSliceQueryConfig): string[] {
+    private _resolveKeysForSliceQuery(query: IAggregatorQueryConfig): string[] {
 
         const queryKeys = query[this._config.name]
 
@@ -123,7 +163,7 @@ export class DataGroup<T> implements IDataAggregation<T> {
 
     private _getByKey(key: string): T[] {
 
-        if (!key || typeof key !== 'string' || !this._leaves.hasOwnProperty(key)) {
+        if (typeof key !== 'string' || !this._leaves.hasOwnProperty(key)) {
             return [];
         } else {
             return this._leaves[key];
@@ -198,7 +238,7 @@ export class DataGroup<T> implements IDataAggregation<T> {
     private _serializeKey(key: string | void): string {
 
         if (key === null) {
-            return this._voidKey;
+            return AggregatedDataSet.voidKey;
         } else if (typeof key === 'string') {
             return key;
         } else {

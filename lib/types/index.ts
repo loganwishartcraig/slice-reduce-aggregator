@@ -25,7 +25,7 @@
  * // by DEP_NUM (any value), sub indexed by STATUS of 'CREATED'
  *
  */
-export type IAggregatorSliceQueryConfig = {
+export type IAggregatorQueryConfig = {
     [aggName: string]: any[] | '*';
 };
 
@@ -79,3 +79,8 @@ export interface IAggregatorSliceResult<T> {
     items: T | IAggregatorSliceResult<T>[];
 
 }
+
+/**
+ * A function that determine's if the two items are the same object.
+ */
+export type IDataMatcher<T> = (a: T, b: T) => boolean;
