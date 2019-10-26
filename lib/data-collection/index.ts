@@ -136,7 +136,8 @@ export default class Tree<T = any, C extends Container<T> = T[]> {
     private _containerType: ContainerType;
     private _aggregators: IAggregator<T>[];
     private _aggregationOrder: string[];
-    private _cachedQueries: Set<SliceQuery<T, C>> = new Set()
+    private _cachedQueries: { [id: number]: SliceQuery<T, C> } = {};
+    private _nextQueryId: number = 0;
 
     private _idAccessor: (item: T) => any;
 
@@ -162,21 +163,25 @@ export default class Tree<T = any, C extends Container<T> = T[]> {
 
     public add(item: T): void {
         this._root.add(item);
-        this._cachedQueries.forEach(query => query.append(item));
+        Object.values(this._cachedQueries).forEach(query => query.append(item));
     }
 
     public remove(item: T): void {
         this._root.remove(item);
-        this._cachedQueries.forEach(query => query.remove(item));
+        Object.values(this._cachedQueries).forEach(query => query.remove(item));
     }
 
     public purge(): void {
         this._root.purge();
-        this._cachedQueries = new Set();
+        this._cachedQueries = {};
     }
 
-    public resetCachedQueries(): void {
-        this._cachedQueries = new Set();
+    public freeCachedQueries(): void {
+        this._cachedQueries = {};
+    }
+
+    public getCachedQuery(id: number): SliceQuery<T, C> | void {
+
     }
 
     public size(): number {
@@ -199,18 +204,20 @@ export default class Tree<T = any, C extends Container<T> = T[]> {
         return [...this._aggregationOrder];
     }
 
-    public slice(config: IQueryConfig): C {
+    public slice(config: IQueryConfig): SliceResult<T, C> {
 
-        const query = new SliceQuery(config, this);
+        const query = new SliceQuery({
+            ...config,
+            id: this._nextQueryId++
+        }, this);
 
         if (config.cache) {
-            // WILL CAUSE A MEMORY LEAK.
-            // Need a way to not execute the same query or remove
-            // from memory on component unmount.
-            this._cachedQueries.add(query);
+            // Need to be careful about managing cached queries.
+            // It could cause a memory leak cache is never freed.
+            this._cachedQueries[query.id] = query;
         }
 
-        return query.exec().results();
+        return query.exec();
 
     }
 
@@ -231,8 +238,6 @@ export default class Tree<T = any, C extends Container<T> = T[]> {
             }
 
         });
-
-        console.log(keyPath);
 
         return keyPath;
 
@@ -560,17 +565,24 @@ export class SliceResultFactory {
     }
 }
 
+export interface ISliceQueryConfig extends IQueryConfig {
+    id: number;
+}
+
 export class SliceQuery<T, C extends Container<T>> {
 
     private _query: IQueryConfig;
     private _result: SliceResult<T, C>;
     private _tree: Tree<T, C>;
 
+    public readonly id: number;
+
     private _executed: boolean = false;
 
-    constructor(config: IQueryConfig, tree: Tree<T, C>) {
+    constructor(config: ISliceQueryConfig, tree: Tree<T, C>) {
         this._query = config;
         this._tree = tree;
+        this.id = config.id;
         this._result = SliceResultFactory.build<T, C>(tree);
     }
 
@@ -611,13 +623,8 @@ export class SliceQuery<T, C extends Container<T>> {
                 return [currentNode.getChildByKey(PathNode.VoidKey)]
                     .filter(item => !!item) as Node<T, C>[];
             default:
-                // console.error(`Unknown slice operator ${operator} for aggregation ${currentAggregationKey}`);
-                // return [];
-
-                // Assume 'nothing provided' means any key.
-                return currentNode
-                    .getAllChildren()
-                    .map(([_key, node]) => node) as Node<T, C>[];
+                console.error(`Unknown slice operator ${operator} for aggregation ${currentAggregationKey}`);
+                return [];
 
         }
 
