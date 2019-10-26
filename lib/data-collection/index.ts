@@ -1,4 +1,9 @@
-export type Container<T = any> = Map<any, T> | Set<T> | T[];
+export type Container<T, C extends ContainerType> =
+    C extends 'array' ? T[] :
+    C extends 'set' ? Set<T> :
+    C extends 'map' ? Map<any, T> :
+    never
+
 export type ContainerType = 'array' | 'set' | 'map';
 
 /**
@@ -28,15 +33,15 @@ export interface IAggregator<T> {
 }
 
 
-export interface ITreeConfig<T = any> {
-    containerType: ContainerType;
+export interface ITreeConfig<T, C extends ContainerType> {
+    containerType: C;
     aggregators: IAggregator<T>[];
     idAccessor: (item: T) => any;
 }
 
 export class NodeFactory {
 
-    public static build<T, C extends Container<T>>({
+    public static build<T, C extends ContainerType>({
         aggregators: [currentAggregator, ...nextAggregators] = [],
         idAccessor,
 
@@ -128,7 +133,7 @@ export interface IQueryConfig {
     cache?: boolean;
 }
 
-export default class Tree<T = any, C extends Container<T> = T[]> {
+export default class Tree<T, C extends ContainerType> {
 
     private static _RootNodeKey = '__ROOT__' as const;
 
@@ -141,7 +146,7 @@ export default class Tree<T = any, C extends Container<T> = T[]> {
 
     private _idAccessor: (item: T) => any;
 
-    constructor(config: ITreeConfig<T>) {
+    constructor(config: ITreeConfig<T, C>) {
 
         this._containerType = config.containerType;
         this._aggregators = config.aggregators;
@@ -181,7 +186,7 @@ export default class Tree<T = any, C extends Container<T> = T[]> {
     }
 
     public getCachedQuery(id: number): SliceQuery<T, C> | void {
-
+        return this._cachedQueries[id];
     }
 
     public size(): number {
@@ -245,14 +250,14 @@ export default class Tree<T = any, C extends Container<T> = T[]> {
 
 }
 
-export interface INodeConfig<T, C extends Container<T>> {
+export interface INodeConfig<T, C extends ContainerType> {
     key: string;
     parent: Node<T, C> | void;
     containerType: ContainerType;
     idAccessor: (item: T) => any;
 }
 
-export abstract class Node<T, C extends Container<T>> {
+export abstract class Node<T, C extends ContainerType> {
 
     protected _key: string;
     protected _parent: Node<T, C> | void
@@ -283,12 +288,12 @@ export abstract class Node<T, C extends Container<T>> {
 
 }
 
-export interface IPathNodeConfig<T, C extends Container<T>> extends INodeConfig<T, C> {
+export interface IPathNodeConfig<T, C extends ContainerType> extends INodeConfig<T, C> {
     aggregator: IAggregator<T>;
     nextAggregators: IAggregator<T>[];
 }
 
-export class PathNode<T, C extends Container<T>> extends Node<T, C> {
+export class PathNode<T, C extends ContainerType> extends Node<T, C> {
 
     public static VoidKey = '__VOID__' as const;
 
@@ -407,16 +412,16 @@ export class PathNode<T, C extends Container<T>> extends Node<T, C> {
 
 }
 
-export abstract class LeafNode<T, C extends Container<T>> extends Node<T, C> {
+export abstract class LeafNode<T, C extends ContainerType> extends Node<T, C> {
 
-    protected _children: C;
+    protected _children: Container<T, C>;
 
     constructor(config: INodeConfig<T, C>) {
         super(config);
         this._children = this._initChildren();
     }
 
-    protected abstract _initChildren(): C;
+    protected abstract _initChildren(): Container<T, C>;
 
     protected _getId(item: T): any {
         return this._idAccessor(item);
@@ -436,7 +441,7 @@ export abstract class LeafNode<T, C extends Container<T>> extends Node<T, C> {
 
 }
 
-export class MapLeaf<T> extends LeafNode<T, Map<any, T>> {
+export class MapLeaf<T> extends LeafNode<T, 'map'> {
 
     protected _initChildren(): Map<any, T> {
         return new Map();
@@ -471,7 +476,7 @@ export class MapLeaf<T> extends LeafNode<T, Map<any, T>> {
 
 }
 
-export class SetLeaf<T> extends LeafNode<T, Set<T>> {
+export class SetLeaf<T> extends LeafNode<T, 'set'> {
 
     protected _initChildren(): Set<T> {
         return new Set();
@@ -498,7 +503,7 @@ export class SetLeaf<T> extends LeafNode<T, Set<T>> {
     }
 }
 
-export class ArrayLeaf<T> extends LeafNode<T, T[]> {
+export class ArrayLeaf<T> extends LeafNode<T, 'array'> {
 
     protected _initChildren(): T[] {
         return [];
@@ -546,7 +551,7 @@ export class ArrayLeaf<T> extends LeafNode<T, T[]> {
 }
 
 export class SliceResultFactory {
-    public static build<T, C extends Container<T>>(tree: Tree<T, C>): SliceResult<T, C> {
+    public static build<T, C extends ContainerType>(tree: Tree<T, C>): SliceResult<T, C> {
 
         const config = {
             idAccessor: tree.getIdAccessor()
@@ -569,7 +574,7 @@ export interface ISliceQueryConfig extends IQueryConfig {
     id: number;
 }
 
-export class SliceQuery<T, C extends Container<T>> {
+export class SliceQuery<T, C extends ContainerType> {
 
     private _query: IQueryConfig;
     private _result: SliceResult<T, C>;
@@ -738,9 +743,9 @@ export class SliceQuery<T, C extends Container<T>> {
 
 }
 
-export abstract class SliceResult<T, C extends Container<T>> {
+export abstract class SliceResult<T, C extends ContainerType> {
 
-    protected _results: C;
+    protected _results: Container<T, C>;
     protected _idAccessor: (item: T) => any;
 
     constructor({
@@ -752,12 +757,12 @@ export abstract class SliceResult<T, C extends Container<T>> {
         this._idAccessor = idAccessor;
     }
 
-    protected abstract _initResultsContainer(): C;
+    protected abstract _initResultsContainer(): Container<T, C>;
 
     public abstract add(item: T): void;
     public abstract remove(item: T): void;
 
-    public results(): C {
+    public results(): Container<T, C> {
         return this._results;
     }
 
@@ -767,7 +772,7 @@ export abstract class SliceResult<T, C extends Container<T>> {
 
 }
 
-export class MapResult<T> extends SliceResult<T, Map<any, T>> {
+export class MapResult<T> extends SliceResult<T, 'map'> {
 
     protected _initResultsContainer(): Map<any, T> {
         return new Map();
@@ -783,7 +788,7 @@ export class MapResult<T> extends SliceResult<T, Map<any, T>> {
 
 }
 
-export class SetResult<T> extends SliceResult<T, Set<T>> {
+export class SetResult<T> extends SliceResult<T, 'set'> {
 
     protected _initResultsContainer(): Set<T> {
         return new Set();
@@ -799,7 +804,7 @@ export class SetResult<T> extends SliceResult<T, Set<T>> {
 
 }
 
-export class ArrayResult<T> extends SliceResult<T, T[]> {
+export class ArrayResult<T> extends SliceResult<T, 'array'> {
 
     private _seenIds: Set<any> = new Set();
 
@@ -843,20 +848,3 @@ export class ArrayResult<T> extends SliceResult<T, T[]> {
     }
 
 }
-
-
-
-// const test = new Tree<{ class: string }, { class: string }[]>({
-//     containerType: 'array',
-//     idAccessor: (item) => item,
-//     aggregators: [{
-//         name: 'class',
-//         keyAccessor: (item) => item.class
-//     }]
-// });
-
-// test.slice({
-//     conditions: {
-//         class: ['in', '123']
-//     }
-// })
