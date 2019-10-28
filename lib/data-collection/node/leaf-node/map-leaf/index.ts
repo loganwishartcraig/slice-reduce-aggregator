@@ -1,4 +1,4 @@
-import LeafNode from "..";
+import LeafNode from "../base";
 
 export default class MapLeaf<T> extends LeafNode<T, 'map'> {
 

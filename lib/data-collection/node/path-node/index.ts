@@ -1,8 +1,7 @@
-import { ContainerType } from "lib/data-collection/types";
-import Node, { INodeConfig, NodeFactory } from "..";
-import { IAggregator } from "lib/types";
-import { VoidKey } from "lib/data-collection/constants";
-import { Utils } from "lib/data-collection/utils";
+import { ContainerType, IAggregator } from "../../types";
+import Node, { INodeConfig } from "..";
+import { Utils } from "../../utils";
+import NodeFactory from "../../node-factory";
 
 export interface IPathNodeConfig<T, C extends ContainerType> extends INodeConfig<T, C> {
     aggregator: IAggregator<T>;

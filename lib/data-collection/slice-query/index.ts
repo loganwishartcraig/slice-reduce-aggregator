@@ -1,8 +1,9 @@
-import { ContainerType } from "../types";
-import SliceResult, { SliceResultFactory } from "../slice-result";
-import Tree from "../subset-tree";
-import Node from "../node";
 import { VoidKey } from "../constants";
+import Node from "../node";
+import SliceResult from "../slice-result";
+import SliceResultFactory from '../slice-result-factory';
+import SubsetTree from "../subset-tree";
+import { ContainerType } from "../types";
 
 export interface BaseCondition extends Array<any> {
     0: 'eq' | 'ne' | 'in' | 'out' | 'any' | 'null';
@@ -57,24 +58,27 @@ export interface ISliceQueryConfig extends IQueryConfig {
     id: number;
 }
 
-export default class SliceQuery<T, C extends ContainerType> {
-
-    private _query: IQueryConfig;
-    private _result: SliceResult<T, C>;
-    private _tree: Tree<T, C>;
+export abstract class TreeQuery<T, C extends ContainerType> {
 
     public readonly id: number;
 
-    private _executed: boolean = false;
+    protected _query: IQueryConfig;
+    protected _result: any;
+    protected _tree: SubsetTree<T, C>;
 
-    constructor(config: ISliceQueryConfig, tree: Tree<T, C>) {
+    protected _executed: boolean = false;
+
+    constructor(config: ISliceQueryConfig, tree: SubsetTree<T, C>) {
         this._query = config;
         this._tree = tree;
         this.id = config.id;
-        this._result = SliceResultFactory.build<T, C>(tree);
+        this._result = this._initResults();
     }
 
-    private _resolveNextBFSNodes({
+    public abstract exec(): any;
+    protected abstract _initResults(): any;
+
+    protected _resolveNextBFSNodes({
         currentNode,
         condition: [operator, value] = ['any'],
         currentAggregationKey
@@ -115,40 +119,6 @@ export default class SliceQuery<T, C extends ContainerType> {
                 return [];
 
         }
-
-    }
-
-    public exec(): SliceResult<T, C> {
-
-        if (this._executed) return this._result;
-
-        const { conditions } = this._query;
-
-        const recurse = (
-            currentNode: Node<T, C>,
-            [currentAggregationKey, ...remainingAggregationKeys]: string[] = [],
-        ): void => {
-
-            if (!currentNode) {
-                return;
-            }
-
-            if (!currentAggregationKey) {
-                return currentNode.leaves().forEach(item => this._result.add(item));
-            }
-
-            const condition = conditions[currentAggregationKey] || ['any', true];
-
-            this._resolveNextBFSNodes({ currentNode, condition, currentAggregationKey })
-                .forEach(nextNode => recurse(nextNode, remainingAggregationKeys));
-
-        };
-
-        recurse(this._tree.getRoot(), this._tree.getAggregationOrder());
-
-        this._executed = true;
-
-        return this._result;
 
     }
 
@@ -223,5 +193,48 @@ export default class SliceQuery<T, C extends ContainerType> {
         return this._result;
 
     }
+
+
+}
+export default class SliceQuery<T, C extends ContainerType> extends TreeQuery<T, C>{
+
+    protected _initResults(): SliceResult<T, C> {
+        return SliceResultFactory.build<T, C>(this._tree);
+    }
+
+    public exec(): SliceResult<T, C> {
+
+        if (this._executed) return this._result;
+
+        const { conditions } = this._query;
+
+        const recurse = (
+            currentNode: Node<T, C>,
+            [currentAggregationKey, ...remainingAggregationKeys]: string[] = [],
+        ): void => {
+
+            if (!currentNode) {
+                return;
+            }
+
+            if (!currentAggregationKey) {
+                return currentNode.leaves().forEach(item => this._result.add(item));
+            }
+
+            const condition = conditions[currentAggregationKey] || ['any', true];
+
+            this._resolveNextBFSNodes({ currentNode, condition, currentAggregationKey })
+                .forEach(nextNode => recurse(nextNode, remainingAggregationKeys));
+
+        };
+
+        recurse(this._tree.getRoot(), this._tree.getAggregationOrder());
+
+        this._executed = true;
+
+        return this._result;
+
+    }
+
 
 }

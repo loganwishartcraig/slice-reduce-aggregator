@@ -10,3 +10,7 @@ import { IAggregator } from './types';
 export { AggregatedDataSet };
 export { IAggregationQueryResult };
 export { IAggregator };
+
+import SubsetTree, { SliceResult } from './data-collection';
+export default SubsetTree;
+export { SliceResult };

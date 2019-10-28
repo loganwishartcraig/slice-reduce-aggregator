@@ -1,18 +1,18 @@
-import { ContainerType } from "../types";
-import { IAggregator } from "lib/types";
-import Node, { NodeFactory } from "../node";
+import { ContainerType, IAggregator } from "../types";
+import Node from "../node";
+import NodeFactory from "../node-factory";
 import SliceQuery, { IQueryConfig } from "../slice-query";
-import { RootKey, VoidKey } from "../constants";
+import { RootKey } from "../constants";
 import SliceResult from "../slice-result";
 import { Utils } from "../utils";
 
-export interface ITreeConfig<T, C extends ContainerType> {
+export interface ISubsetTreeConfig<T, C extends ContainerType> {
     containerType: C;
     aggregators: IAggregator<T>[];
     idAccessor: (item: T) => any;
 }
 
-export default class Tree<T, C extends ContainerType> {
+export default class SubsetTree<T, C extends ContainerType> {
 
     private _root: Node<T, C>;
     private _containerType: ContainerType;
@@ -23,7 +23,7 @@ export default class Tree<T, C extends ContainerType> {
 
     private _idAccessor: (item: T) => any;
 
-    constructor(config: ITreeConfig<T, C>) {
+    constructor(config: ISubsetTreeConfig<T, C>) {
 
         this._containerType = config.containerType;
         this._aggregators = config.aggregators;

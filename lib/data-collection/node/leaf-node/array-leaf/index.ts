@@ -1,4 +1,4 @@
-import LeafNode from "..";
+import LeafNode from "../base";
 
 export default class ArrayLeaf<T> extends LeafNode<T, 'array'> {
 

@@ -1,4 +1,4 @@
-import LeafNode from "..";
+import LeafNode from "../base";
 
 export default class SetLeaf<T> extends LeafNode<T, 'set'> {
 

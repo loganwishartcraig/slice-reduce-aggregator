@@ -1,6 +1,4 @@
-import { ContainerType, IAggregator } from "../types";
-import { ArrayLeaf, MapLeaf, SetLeaf } from "./leaf-node";
-import PathNode from "./path-node";
+import { ContainerType } from "../types";
 
 
 export interface INodeConfig<T, C extends ContainerType> {
@@ -41,50 +39,3 @@ export default abstract class Node<T, C extends ContainerType> {
 
 }
 
-
-export class NodeFactory {
-
-    public static build<T, C extends ContainerType>({
-        aggregators: [currentAggregator, ...nextAggregators] = [],
-        idAccessor,
-
-        containerType,
-        key,
-        parent
-    }: {
-        aggregators: IAggregator<T>[],
-        idAccessor: (item: T) => any,
-        containerType: ContainerType,
-        key: string,
-        parent: Node<T, C> | void
-    }): Node<T, C> {
-
-        const config = {
-            key,
-            parent,
-            containerType,
-            idAccessor
-        };
-
-        if (!currentAggregator) {
-            switch (containerType) {
-                case 'array':
-                    return new ArrayLeaf(config);
-                case 'map':
-                    return new MapLeaf(config);
-                case 'set':
-                    return new SetLeaf(config);
-                default:
-                    throw new TypeError(`Unknown container type ${containerType}. Cannot create leaf node.`);
-            }
-        } else {
-            return new PathNode({
-                ...config,
-                aggregator: currentAggregator,
-                nextAggregators: nextAggregators,
-            });
-        }
-
-    }
-
-}
