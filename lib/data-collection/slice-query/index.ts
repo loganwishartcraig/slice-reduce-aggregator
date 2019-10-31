@@ -63,6 +63,8 @@ export abstract class TreeQuery<T, C extends ContainerType> {
     public readonly id: number;
 
     protected _query: IQueryConfig;
+
+    // Need to have stronger type here to support, just to support CRUD ops
     protected _result: any;
     protected _tree: SubsetTree<T, C>;
 

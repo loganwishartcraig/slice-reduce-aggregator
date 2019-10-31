@@ -8,6 +8,10 @@ export interface INodeConfig<T, C extends ContainerType> {
     idAccessor: (item: T) => any;
 }
 
+export interface INodeRemoveOptions {
+    useExhaustiveSearch?: boolean;
+}
+
 export default abstract class Node<T, C extends ContainerType> {
 
     protected _key: string;
@@ -28,7 +32,7 @@ export default abstract class Node<T, C extends ContainerType> {
     }
 
     public abstract add(item: T): void;
-    public abstract remove(item: T): void;
+    public abstract remove(item: T, options: INodeRemoveOptions): void;
     public abstract purge(): void;
     public abstract size(): number;
     public abstract leaves(): T[];
@@ -36,6 +40,7 @@ export default abstract class Node<T, C extends ContainerType> {
     public abstract getChildByKey(key: string): Node<T, C> | void;
     public abstract hasChild(key: string): boolean;
     public abstract getAllChildren(): [string, Node<T, C>][];
+    public abstract getItemChildren(item: T): [string, Node<T, C>][];
 
 }
 

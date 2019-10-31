@@ -28,4 +28,8 @@ export default abstract class LeafNode<T, C extends ContainerType> extends Node<
         return [];
     }
 
+    public getItemChildren(): [string, Node<T, C>][] {
+        return [];
+    }
+
 }

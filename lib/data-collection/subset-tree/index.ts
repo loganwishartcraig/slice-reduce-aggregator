@@ -1,5 +1,5 @@
 import { ContainerType, IAggregator } from "../types";
-import Node from "../node";
+import Node, { INodeRemoveOptions } from "../node";
 import NodeFactory from "../node-factory";
 import SliceQuery, { IQueryConfig } from "../slice-query";
 import { RootKey } from "../constants";
@@ -48,8 +48,10 @@ export default class SubsetTree<T, C extends ContainerType> {
         Object.values(this._cachedQueries).forEach(query => query.append(item));
     }
 
-    public remove(item: T): void {
-        this._root.remove(item);
+    public remove(item: T, options: INodeRemoveOptions = {
+        useExhaustiveSearch: false
+    }): void {
+        this._root.remove(item, options);
         Object.values(this._cachedQueries).forEach(query => query.remove(item));
     }
 

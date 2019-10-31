@@ -1,5 +1,5 @@
 import { ContainerType, IAggregator } from "../../types";
-import Node, { INodeConfig } from "..";
+import Node, { INodeConfig, INodeRemoveOptions } from "..";
 import { Utils } from "../../utils";
 import NodeFactory from "../../node-factory";
 
@@ -35,17 +35,14 @@ export default class PathNode<T, C extends ContainerType> extends Node<T, C> {
 
     };
 
-    public remove(item: T): void {
+    public remove(item: T, options: INodeRemoveOptions): void {
 
-        this._getItemChildrenKeys(item).forEach(key => {
+        const subTrees = options.useExhaustiveSearch ? this.getAllChildren() : this.getItemChildren(item);
 
-            if (this._hasChildNode(key)) {
-                this._getChildNode(key).remove(item);
-            }
-
-        });
+        subTrees.forEach(([_, tree]) => tree.remove(item, options));
 
     };
+
 
     public purge(): void {
         this._children = {};
@@ -78,6 +75,20 @@ export default class PathNode<T, C extends ContainerType> extends Node<T, C> {
 
     public getAllChildren(): [string, Node<T, C>][] {
         return Object.entries(this._children);
+    }
+
+    public getItemChildren(item: T): [string, Node<T, C>][] {
+
+        return this._getItemChildrenKeys(item).reduce((children, key) => {
+
+            if (this._hasChildNode(key)) {
+                children.push([key, this._getChildNode(key)])
+            }
+
+            return children;
+
+        }, []);
+
     }
 
     private _initChildNode(key: string): Node<T, C> {
