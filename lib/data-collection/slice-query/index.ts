@@ -151,13 +151,11 @@ export abstract class TreeQuery<T, C extends ContainerType> {
             // If no key value matched the current criteria,
             // we know not to add it to the query result.
             if (!meetsCriteria) {
-                console.log('failed on criteria', { keys, condition: conditions[aggName], aggName });
                 return this._result;
             }
 
         }
 
-        console.log('appending item', { item, query: this._query });
         this._result.add(item);
 
         return this._result;
