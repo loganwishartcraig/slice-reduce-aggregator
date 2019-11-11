@@ -1,4 +1,4 @@
-import { DataGroup } from '../lib/data-group';
+import { DataGroup } from '../../_data-aggregator/data-group';
 
 describe('DataGroup', () => {
 

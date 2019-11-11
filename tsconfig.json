@@ -27,7 +27,14 @@
         "outDir": "./dist"
     },
     "include": [
-        "./lib/**/*"
+        "./lib/**/*",
+        "../_data-aggregator/data-sub-aggregation",
+        "../_data-aggregator/data-aggregation-factory",
+        "../_data-aggregator/aggregated-data-set",
+        "../_data-aggregator/aggregation-query-result",
+        "../_data-aggregator/data-group",
+        "../_data-aggregator/types",
+        "../_data-aggregator/index.ts"
     ],
     "exclude": [
         "node_modules",
