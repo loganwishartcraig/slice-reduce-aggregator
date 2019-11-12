@@ -34,7 +34,8 @@
         "../_data-aggregator/aggregation-query-result",
         "../_data-aggregator/data-group",
         "../_data-aggregator/types",
-        "../_data-aggregator/index.ts"
+        "../_data-aggregator/index.ts",
+        "__tests__"
     ],
     "exclude": [
         "node_modules",

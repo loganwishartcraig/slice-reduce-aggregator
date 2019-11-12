@@ -5,6 +5,12 @@ import PathNode from '../node/path-node';
 
 export default class NodeFactory {
 
+    public static validContainerTypes: string[] = [
+        'array',
+        'map',
+        'set'
+    ];
+
     public static build<T, C extends ContainerType>({
         aggregators: [currentAggregator, ...nextAggregators] = [],
         idAccessor,
@@ -45,6 +51,12 @@ export default class NodeFactory {
                 nextAggregators: nextAggregators,
             });
         }
+
+    }
+
+    public static isValidContainerType<C extends ContainerType>(type: C): boolean {
+
+        return this.validContainerTypes.includes(type);
 
     }
 

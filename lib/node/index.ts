@@ -1,4 +1,6 @@
 import { ContainerType } from "../types";
+import { _globalLogger } from "../utils/logger";
+import NodeFactory from "../node-factory";
 
 
 export interface INodeConfig<T, C extends ContainerType> {
@@ -23,12 +25,21 @@ export default abstract class Node<T, C extends ContainerType> {
         key,
         parent,
         containerType,
-        idAccessor: matcher
+        idAccessor
     }: INodeConfig<T, C>) {
+
+        if (typeof key !== 'string') {
+            throw new TypeError(`A Node sub-class was instantiated with a non-string 'key'. All nodes must be instantiated with a string key. Empty strings are permitted. Received: ${key}`);
+        } else if (!NodeFactory.isValidContainerType(containerType)) {
+            throw new TypeError(`A Node sub-class was instantiated with an invalid 'containerType'. Valid container types are ${NodeFactory.validContainerTypes.join(', ')}. Received: ${containerType}`);
+        } else if (typeof idAccessor !== 'function') {
+            throw new TypeError(`A Node sub-class was instantiated with a non-function 'idAccessor'. All 'idAccessors' should be of the signature (item: T) => string | void | (string | void)[]. Received: ${idAccessor}`);
+        }
+
         this._key = key;
         this._parent = parent;
         this._containerType = containerType;
-        this._idAccessor = matcher;
+        this._idAccessor = idAccessor;
     }
 
     public abstract add(item: T): void;
