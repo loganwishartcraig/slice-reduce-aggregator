@@ -34,12 +34,15 @@ export default abstract class Node<T, C extends ContainerType> {
             throw new TypeError(`A Node sub-class was instantiated with an invalid 'containerType'. Valid container types are ${NodeFactory.validContainerTypes.join(', ')}. Received: ${containerType}`);
         } else if (typeof idAccessor !== 'function') {
             throw new TypeError(`A Node sub-class was instantiated with a non-function 'idAccessor'. All 'idAccessors' should be of the signature (item: T) => string | void | (string | void)[]. Received: ${idAccessor}`);
+        } else if (parent && !(parent instanceof Node)) {
+            throw new TypeError(`A Node sub-class was instantiated with a non-null, non-Node 'parent'. All node parent's must be undefined, or extend the abstract Node class. Received ${parent}`);
         }
 
         this._key = key;
         this._parent = parent;
         this._containerType = containerType;
         this._idAccessor = idAccessor;
+
     }
 
     public abstract add(item: T): void;

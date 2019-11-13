@@ -4,6 +4,7 @@
   "description": "A small utility library to aggregate and query sets of data",
   "main": "index.ts",
   "scripts": {
+    "build": "tsc",
     "test": "jest",
     "test:watch": "jest --watchAll"
   },
@@ -16,6 +17,7 @@
     "eslint": "^6.4.0",
     "jest": "^24.9.0",
     "ts-jest": "^24.1.0",
+    "tslint-config-airbnb": "^5.11.2",
     "typescript": "^3.6.3"
   }
 }

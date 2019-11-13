@@ -17,7 +17,7 @@ class MockedNode<C extends ContainerType, T = any> extends Node<T, ContainerType
 }
 
 
-describe('Base Node', () => {
+describe('Node - Base', () => {
 
     let baseConfig: INodeConfig<any, any>;
 
@@ -158,6 +158,67 @@ describe('Base Node', () => {
             });
         })).toThrow(TypeError);
 
-    })
+    });
+
+
+    it('Should throw an error if the parent is invalid', () => {
+
+        expect(() => {
+            new MockedNode({
+                ...baseConfig,
+                parent: [123] as any
+            });
+        }).toThrow(TypeError);
+
+        expect(() => {
+            new MockedNode({
+                ...baseConfig,
+                parent: "a string" as any
+            });
+        }).toThrow(TypeError);
+
+    });
+
+    it('Should throw an error if no config is provided', () => {
+
+        expect(() => {
+            new MockedNode(undefined as any);
+        }).toThrow(TypeError);
+
+        expect(() => {
+            new MockedNode(null as any);
+        }).toThrow(TypeError);
+
+    });
+
+
+    it('Should instantiate correctly with the config provided', () => {
+
+        const test = new MockedNode({
+            ...baseConfig
+        });
+
+        expect(test).toBeTruthy();
+        expect((test as any)._idAccessor).toBe(baseConfig.idAccessor);
+        expect((test as any)._key).toBe(baseConfig.key);
+        expect((test as any)._containerType).toBe(baseConfig.containerType);
+        expect((test as any)._parent).toBe(baseConfig.parent);
+
+    });
+
+    it('Should instantiate correctly with a parent provided', () => {
+
+        const parent = new MockedNode({ ...baseConfig });
+
+        const test = new MockedNode({
+            ...baseConfig,
+            parent
+        });
+
+        expect(test).toBeTruthy();
+        expect((test as any)._parent).toBe(parent);
+
+    });
+
 
 })

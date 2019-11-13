@@ -30,7 +30,7 @@ export const Utils = {
 
             return seenKeys;
 
-        }, {}));
+        }, {} as { [key: string]: boolean }));
 
         return validKeys.length ? validKeys : [VoidKey];
 

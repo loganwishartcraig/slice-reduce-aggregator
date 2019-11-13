@@ -87,7 +87,7 @@ export default class PathNode<T, C extends ContainerType> extends Node<T, C> {
 
             return children;
 
-        }, []);
+        }, [] as [string, Node<T, C>][]);
 
     }
 
