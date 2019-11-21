@@ -9,8 +9,6 @@
             "dom",
             "webworker"
         ],
-        "allowJs": true,
-        "checkJs": true,
         "alwaysStrict": true,
         "locale": "en",
         "moduleResolution": "node",
