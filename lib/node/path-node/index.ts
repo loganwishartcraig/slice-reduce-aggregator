@@ -10,7 +10,6 @@ export interface IPathNodeConfig<T, C extends ContainerType> extends INodeConfig
 
 export default class PathNode<T, C extends ContainerType> extends Node<T, C> {
 
-
     private _children: { [key: string]: Node<T, C>; } = {};
     private _aggregator: IAggregator<T>;
     private _nextAggregators: IAggregator<T>[];

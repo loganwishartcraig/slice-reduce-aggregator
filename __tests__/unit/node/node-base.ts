@@ -199,10 +199,8 @@ describe('Node - Base', () => {
         });
 
         expect(test).toBeTruthy();
-        expect((test as any)._idAccessor).toBe(baseConfig.idAccessor);
-        expect((test as any)._key).toBe(baseConfig.key);
-        expect((test as any)._containerType).toBe(baseConfig.containerType);
-        expect((test as any)._parent).toBe(baseConfig.parent);
+        expect(test.key).toBe(baseConfig.key);
+        expect(test.parent).toBe(baseConfig.parent);
 
     });
 
@@ -216,9 +214,27 @@ describe('Node - Base', () => {
         });
 
         expect(test).toBeTruthy();
-        expect((test as any)._parent).toBe(parent);
+        expect(test.parent).toBe(parent);
 
     });
 
+    it('Should lock key/parent fields for editing', () => {
+
+        const parent = new MockedNode({ ...baseConfig });
+
+        const test = new MockedNode({
+            ...baseConfig,
+            parent
+        });
+
+        expect(() => {
+            (test as any).key = 'overwrite';
+        }).toThrow();
+
+        expect(() => {
+            (test as any).parent = undefined;
+        }).toThrow();
+
+    });
 
 })

@@ -11,6 +11,7 @@ export default abstract class LeafNode<T, C extends ContainerType> extends Node<
     }
 
     protected abstract _initChildren(): Container<T, C>;
+    public abstract remove(item: T): void;
 
     protected _getId(item: T): any {
         return this._idAccessor(item);

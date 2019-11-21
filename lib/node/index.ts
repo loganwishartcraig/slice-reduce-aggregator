@@ -16,8 +16,8 @@ export interface INodeRemoveOptions {
 
 export default abstract class Node<T, C extends ContainerType> {
 
-    protected _key: string;
-    protected _parent: Node<T, C> | void
+    public readonly key: string;
+    public readonly parent: Node<T, C> | void
     protected _containerType: ContainerType;
     protected _idAccessor: (item: T) => any;
 
@@ -38,8 +38,8 @@ export default abstract class Node<T, C extends ContainerType> {
             throw new TypeError(`A Node sub-class was instantiated with a non-null, non-Node 'parent'. All node parent's must be undefined, or extend the abstract Node class. Received ${parent}`);
         }
 
-        this._key = key;
-        this._parent = parent;
+        this.key = key;
+        this.parent = parent;
         this._containerType = containerType;
         this._idAccessor = idAccessor;
 

@@ -14,7 +14,6 @@ export default class NodeFactory {
     public static build<T, C extends ContainerType>({
         aggregators: [currentAggregator, ...nextAggregators] = [],
         idAccessor,
-
         containerType,
         key,
         parent
